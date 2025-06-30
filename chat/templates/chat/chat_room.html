@@ -1,0 +1,1131 @@
+{% extends "users/base.html" %}
+
+{% block title %}{{ room.name }} - ChatApp{% endblock %}
+
+{% block extra_css %}
+    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💬</text></svg>">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .navbar { display: none !important; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            overflow: hidden;
+            padding: 0;
+        }
+
+        .chat-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            height: calc(100vh - 40px);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .chat-header {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .room-info h2 {
+            margin: 0;
+            color: white;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .room-details {
+            display: flex;
+            gap: 20px;
+            margin-top: 8px;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .room-details span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .room-owner {
+            color: #ffd700;
+            font-weight: 600;
+        }
+        
+        .room-type {
+            color: #90EE90;
+        }
+        
+        .member-count {
+            color: #87CEEB;
+        }
+        
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .manage-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 25px;
+            text-decoration: none;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .manage-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            color: white;
+            text-decoration: none;
+        }
+        
+        .back-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 10px 18px;
+            border-radius: 25px;
+            text-decoration: none;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            color: white;
+            text-decoration: none;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+        }
+        
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+            position: relative;
+        }
+        
+        .message.sent {
+            flex-direction: row-reverse;
+        }
+        
+        .message-bubble {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 20px;
+            max-width: 70%;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+        
+        .message.sent .message-bubble {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .message-actions {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+        
+        .message:hover .message-actions {
+            opacity: 1;
+        }
+        
+        .message.sent .message-actions {
+            right: -5px;
+        }
+        
+        .message.received .message-actions {
+            left: -5px;
+        }
+        
+        .message-action-btn {
+            background: rgba(255, 255, 255, 0.95);
+            border: none;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 12px;
+            color: #666;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        .message.sent .message-action-btn {
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+        }
+        
+        .message-action-btn:hover {
+            background: white;
+            transform: scale(1.1);
+            color: #333;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        
+        .message-actions-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            padding: 6px 0;
+            min-width: 120px;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-5px);
+            transition: all 0.3s ease;
+            margin-top: 5px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        .message-actions-dropdown.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        
+        .message-action-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            font-size: 13px;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+        }
+        
+        .message-action-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .message-action-item.edit { color: #007bff; }
+        .message-action-item.delete { color: #dc3545; }
+        
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            margin: 10px 0;
+            backdrop-filter: blur(10px);
+            color: white;
+            font-size: 14px;
+        }
+        
+        .typing-indicator .dots {
+            display: flex;
+            gap: 4px;
+        }
+        
+        .typing-indicator .dot {
+            width: 8px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+        
+        .typing-indicator .dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-indicator .dot:nth-child(2) { animation-delay: -0.16s; }
+        
+        @keyframes typing {
+            0%, 80%, 100% {
+                transform: scale(0.8);
+                opacity: 0.5;
+            }
+            40% {
+                transform: scale(1);
+                opacity: 1;
+        }
+        }
+        
+        .file-upload-area {
+            position: relative;
+            margin-bottom: 15px;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .file-upload-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 10px 15px;
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .file-upload-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+        }
+        
+        .file-preview {
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            margin: 10px 0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+        
+        .file-preview.show {
+            display: block;
+        }
+        
+        .chat-input-container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px 30px;
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .chat-input {
+            display: flex;
+            gap: 15px;
+            align-items: flex-end;
+            background: #f8f9fa;
+            border-radius: 25px;
+            padding: 15px 20px;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .chat-input:focus-within {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .chat-input textarea {
+            flex: 1;
+            border: none;
+            background: transparent;
+            font-size: 15px;
+            resize: none;
+            min-height: 24px;
+            max-height: 120px;
+            font-family: inherit;
+            outline: none;
+            padding: 0;
+            line-height: 1.4;
+        }
+        
+        .send-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .send-btn:hover:not(:disabled) {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .send-btn:disabled {
+            background: #adb5bd;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Dosya mesaj stilleri */
+        .file-message {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 15px;
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .file-message:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .file-icon {
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+
+        .file-details {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .file-name {
+            font-weight: 600;
+            color: inherit;
+            margin-bottom: 4px;
+            word-break: break-word;
+        }
+
+        .file-size {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .download-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            color: white;
+            text-decoration: none;
+        }
+
+        .download-btn i {
+            font-size: 12px;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<body>
+    {% csrf_token %}
+    <div class="chat-container">
+        <div class="chat-header">
+            <div class="room-info">
+                <h2>{{ room.name }}</h2>
+                <div class="room-details">
+                    <span class="room-owner">
+                        <i class="fas fa-crown"></i> Sahip: {{ room.owner.username|default:"Sistem" }}
+                    </span>
+                    <span class="room-type">
+                        <i class="fas fa-{% if room.room_type == 'public' %}globe{% else %}lock{% endif %}"></i>
+                        {{ room.room_type|title }}
+                    </span>
+                    <span class="member-count">
+                        <i class="fas fa-users"></i> {{ room.members.count }} üye
+                    </span>
+                </div>
+            </div>
+            <div class="header-actions">
+                {% if can_manage %}
+                <a href="{% url 'chat:room_management' room.id %}" class="manage-btn" title="Oda Yönetimi">
+                    <i class="fas fa-cog"></i>
+                    <span>Yönet</span>
+                </a>
+                {% endif %}
+                <a href="{% url 'chat:chat_room_list' %}" class="back-btn">
+                    <i class="fas fa-arrow-left"></i> Tüm Odalar
+                </a>
+            </div>
+        </div>
+
+        <div class="chat-messages" id="chat-messages">
+            {% if messages %}
+                {% for message in messages %}
+                    {% if not message.is_deleted %}
+                        <div class="message {% if message.sender == request.user %}sent{% else %}received{% endif %}" data-message-id="{{ message.id }}">
+                            {% if message.sender == request.user %}
+                                <div class="message-actions">
+                                    <button class="message-action-btn" onclick="toggleMessageActions('{{ message.id }}')" title="Seçenekler">
+                                        <i class="fas fa-ellipsis-h"></i>
+                                    </button>
+                                    <div class="message-actions-dropdown" id="actions-dropdown-{{ message.id }}">
+                                        <div class="message-action-item edit" onclick="startEditMessage('{{ message.id }}', '{{ message.content|escapejs }}')">
+                                            <i class="fas fa-edit"></i>
+                                            <span>Mesajı Düzenle</span>
+                                        </div>
+                                        <div class="message-action-item delete" onclick="deleteMessage('{{ message.id }}')">
+                                            <i class="fas fa-trash"></i>
+                                            <span>Mesajı Sil</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                            <div class="message-bubble">
+                                {% if not message.sender == request.user %}
+                                    <div class="username">{{ message.sender.username }}</div>
+                                {% endif %}
+                                
+                                {% if message.is_file_message %}
+                                    <div class="file-message">
+                                        <div class="file-icon">
+                                            {% if message.file_type|slice:":5" == "image" %}🖼️
+                                            {% elif "pdf" in message.file_type %}📄
+                                            {% elif "word" in message.file_type or "document" in message.file_type %}📝
+                                            {% elif "excel" in message.file_type or "spreadsheet" in message.file_type %}📊
+                                            {% elif "text" in message.file_type %}📄
+                                            {% elif "zip" in message.file_type or "rar" in message.file_type %}📦
+                                            {% else %}📎{% endif %}
+                                        </div>
+                                        <div class="file-details">
+                                            <div class="file-name">{{ message.file_name }}</div>
+                                            <div class="file-size">
+                                                {% if message.file_size %}
+                                                    {% if message.file_size < 1024 %}{{ message.file_size }} B
+                                                    {% elif message.file_size < 1048576 %}{{ message.file_size|floatformat:1 }} KB
+                                                    {% else %}{{ message.file_size|floatformat:1 }} MB{% endif %}
+                                                {% else %}Dosya{% endif %}
+                                            </div>
+                                        </div>
+                                        <a href="{{ message.media_url }}" class="download-btn" download="{{ message.file_name }}" target="_blank">
+                                            <i class="fas fa-download"></i> İndir
+                                        </a>
+                                    </div>
+                                {% else %}
+                                <div class="content">{{ message.content }}</div>
+                                {% endif %}
+                                
+                                <div class="time">{{ message.created_at|date:"H:i" }}</div>
+                                {% if message.is_edited %}
+                                    <div class="edited-indicator">(düzenlendi)</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-comment-slash"></i>
+                    <h3>Henüz mesaj yok</h3>
+                    <p>İlk mesajı göndererek sohbeti başlatın!</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="chat-input-container">
+            <div class="file-upload-area">
+                <input type="file" id="file-input" class="file-input" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar">
+                <div class="file-upload-btn" onclick="document.getElementById('file-input').click()" id="file-upload-btn">
+                    <i class="fas fa-paperclip"></i>
+                    <span>Dosya Ekle veya Sürükle</span>
+                </div>
+                <div class="file-preview" id="file-preview"></div>
+            </div>
+            <div class="chat-input">
+                <textarea id="message-input" placeholder="Mesajınızı yazın..."></textarea>
+                <button id="send-button" class="send-btn" disabled><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        const roomId = {{ room.id }};
+        const currentUser = '{{ request.user.username }}';
+            let typingTimer = null;
+            let isTyping = false;
+            const typingUsers = new Set();
+
+        // DOM elements
+        const chatMessages = document.getElementById("chat-messages");
+        const messageInput = document.getElementById("message-input");
+        const sendButton = document.getElementById("send-button");
+        const fileInput = document.getElementById('file-input');
+        const filePreview = document.getElementById('file-preview');
+        const fileUploadBtn = document.getElementById('file-upload-btn');
+
+        // WebSocket connection
+        window.chatSocket = new WebSocket('ws://127.0.0.1:8001/ws/chat/' + roomId + '/');
+
+            chatSocket.onopen = function(e) {
+                console.log("WebSocket bağlantısı başarıyla kuruldu.");
+            };
+
+            chatSocket.onclose = function(e) {
+                console.error('WebSocket bağlantısı beklenmedik bir şekilde kapandı.');
+            };
+
+            chatSocket.onerror = function(e) {
+                console.error('WebSocket hatası:', e);
+            };
+
+            chatSocket.onmessage = function(e) {
+                const data = JSON.parse(e.data);
+                console.log('WebSocket mesajı alındı:', data);
+                
+                switch(data.type) {
+                    case 'message':
+                        addMessageToUI(data.data);
+                        break;
+                    case 'message_edited':
+                        updateMessageInUI(data.data);
+                        break;
+                    case 'message_deleted':
+                        removeMessageFromUI(data.message_id);
+                        break;
+                    case 'typing_start':
+                        handleTypingStart(data.username);
+                        break;
+                    case 'typing_stop':
+                        handleTypingStop(data.username);
+                        break;
+                    default:
+                        console.log('Bilinmeyen mesaj tipi:', data.type);
+                }
+            };
+
+        // Message functions
+            function sendMessage() {
+                const content = messageInput.value.trim();
+                if (!content) return;
+
+                chatSocket.send(JSON.stringify({
+                    'type': 'message',
+                    'message': content
+                }));
+
+                messageInput.value = '';
+                autoResize(messageInput);
+                stopTyping();
+            }
+
+        function addMessageToUI(messageData) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            messageDiv.id = `message-${messageData.id}`;
+            messageDiv.setAttribute('data-message-id', messageData.id);
+            
+            const isOwnMessage = messageData.sender === currentUser;
+            messageDiv.classList.add(isOwnMessage ? 'sent' : 'received');
+            
+            let actionsMenu = '';
+            if (isOwnMessage) {
+                actionsMenu = `
+                    <div class="message-actions">
+                        <button class="message-action-btn" onclick="toggleMessageActions('${messageData.id}')">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </button>
+                        <div class="message-actions-dropdown" id="actions-dropdown-${messageData.id}">
+                            <div class="message-action-item edit" onclick="startEditMessage('${messageData.id}', '${messageData.content.replace(/'/g, "\\'")}')">
+                                <i class="fas fa-edit"></i>
+                                <span>Mesajı Düzenle</span>
+                            </div>
+                            <div class="message-action-item delete" onclick="deleteMessage('${messageData.id}')">
+                                <i class="fas fa-trash"></i>
+                                <span>Mesajı Sil</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Dosya mesajı kontrolü
+            let messageContent = '';
+            if (messageData.is_file_message || messageData.file_info || (messageData.content && messageData.content.includes('📎') && messageData.content.includes('yüklendi:'))) {
+                // Dosya mesajı
+                const fileInfo = messageData.file_info || extractFileInfoFromText(messageData.content);
+                messageContent = createFileLink(fileInfo);
+            } else {
+                // Normal metin mesajı
+                messageContent = `<div class="content">${messageData.content}</div>`;
+            }
+            
+            messageDiv.innerHTML = `
+                ${actionsMenu}
+                <div class="message-bubble">
+                    ${!isOwnMessage ? `<div class="username">${messageData.sender}</div>` : ''}
+                    ${messageContent}
+                    <div class="time">${new Date(messageData.created_at).toLocaleTimeString('tr-TR', {hour: '2-digit', minute: '2-digit'})}</div>
+                    ${messageData.is_edited ? '<div class="edited-indicator">(düzenlendi)</div>' : ''}
+                </div>
+            `;
+            
+            chatMessages.appendChild(messageDiv);
+            scrollToBottom();
+        }
+
+        function updateMessageInUI(messageData) {
+            const messageDiv = document.getElementById(`message-${messageData.id}`);
+            if (messageDiv) {
+                const messageBubble = messageDiv.querySelector('.message-bubble');
+                const contentDiv = messageBubble.querySelector('.content');
+                if (contentDiv) {
+                    contentDiv.innerHTML = `${messageData.content} <em style="color: #666; font-size: 0.9em;">(düzenlendi)</em>`;
+                }
+                
+                // Düzenleme göstergesini ekle
+                const editedIndicator = messageBubble.querySelector('.edited-indicator');
+                if (!editedIndicator) {
+                    const timeDiv = messageBubble.querySelector('.time');
+                    if (timeDiv) {
+                        const indicator = document.createElement('div');
+                        indicator.className = 'edited-indicator';
+                        indicator.textContent = '(düzenlendi)';
+                        indicator.style.color = '#666';
+                        indicator.style.fontSize = '0.8em';
+                        indicator.style.fontStyle = 'italic';
+                        timeDiv.parentNode.insertBefore(indicator, timeDiv.nextSibling);
+                    }
+                }
+            }
+        }
+
+        function removeMessageFromUI(messageId) {
+            const messageDiv = document.getElementById(`message-${messageId}`);
+            if (messageDiv) {
+                messageDiv.remove();
+            }
+        }
+
+        // Typing functions
+            function startTyping() {
+                if (!isTyping) {
+                    isTyping = true;
+                    chatSocket.send(JSON.stringify({
+                        'type': 'typing_start'
+                    }));
+                }
+            }
+
+            function stopTyping() {
+                if (isTyping) {
+                    isTyping = false;
+                    chatSocket.send(JSON.stringify({
+                        'type': 'typing_stop'
+                    }));
+                }
+            }
+
+            function handleTypingStart(username) {
+                if (username !== currentUser) {
+                    typingUsers.add(username);
+                    updateTypingIndicator();
+                }
+            }
+
+            function handleTypingStop(username) {
+                if (username !== currentUser) {
+                    typingUsers.delete(username);
+                    updateTypingIndicator();
+                }
+            }
+
+            function updateTypingIndicator() {
+                const existingIndicator = chatMessages.querySelector('.typing-indicator');
+                if (existingIndicator) {
+                    existingIndicator.remove();
+                }
+
+                if (typingUsers.size > 0) {
+                    const usernames = Array.from(typingUsers);
+                    const indicator = createTypingIndicator(usernames);
+                    chatMessages.appendChild(indicator);
+                    scrollToBottom();
+                }
+            }
+
+            function createTypingIndicator(usernames) {
+                const indicator = document.createElement('div');
+                indicator.className = 'typing-indicator';
+                
+                let text = '';
+                if (usernames.length === 1) {
+                    text = `${usernames[0]} yazıyor`;
+                } else if (usernames.length === 2) {
+                    text = `${usernames[0]} ve ${usernames[1]} yazıyor`;
+                } else {
+                    text = `${usernames[0]} ve ${usernames.length - 1} kişi yazıyor`;
+                }
+                
+                indicator.innerHTML = `
+                    <span>${text}</span>
+                    <div class="dots">
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                    </div>
+                `;
+                
+                return indicator;
+            }
+
+        // File upload functions
+        function uploadFile(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('room_id', roomId);
+            
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            
+            fetch('/chat/upload_file/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                },
+                body: formData
+            })
+            .then(response => {
+                console.log('Upload response:', response);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Upload data:', data);
+                if (data.success) {
+                    if (window.chatSocket) {
+                        window.chatSocket.send(JSON.stringify({
+                            'type': 'message',
+                            'message': `📎 ${file.name} yüklendi: ${data.file.url}`,
+                            'file_info': {
+                                'name': file.name,
+                                'url': data.file.url,
+                                'size': file.size,
+                                'type': file.type
+                            }
+                        }));
+                    }
+                    filePreview.classList.remove('show');
+                    fileInput.value = '';
+                } else {
+                    alert('Dosya yükleme hatası: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Dosya yükleme hatası:', error);
+                alert('Dosya yüklenirken hata oluştu.');
+            });
+        }
+
+        function handleFileSelect() {
+            if (!fileInput.files.length) return;
+            const file = fileInput.files[0];
+            filePreview.innerHTML = `<div class='file-info'>${file.name} (${(file.size/1024).toFixed(1)} KB)</div>`;
+            filePreview.classList.add('show');
+            uploadFile(file);
+        }
+
+        // Dosya link oluşturma fonksiyonları
+        function createFileLink(fileInfo) {
+            const fileIcon = getFileIcon(fileInfo.type);
+            const fileSize = formatFileSize(fileInfo.size);
+            
+            return `
+                <div class="file-message">
+                    <div class="file-icon">${fileIcon}</div>
+                    <div class="file-details">
+                        <div class="file-name">${fileInfo.name}</div>
+                        <div class="file-size">${fileSize}</div>
+                    </div>
+                    <a href="${fileInfo.url}" class="download-btn" download="${fileInfo.name}" target="_blank">
+                        <i class="fas fa-download"></i> İndir
+                    </a>
+                </div>
+            `;
+        }
+
+        function extractFileInfoFromText(content) {
+            // "📎 dosya.pdf yüklendi: /media/chat_files/1/abc123.pdf" formatından dosya bilgilerini çıkar
+            const match = content.match(/📎 (.+?) yüklendi: (.+)/);
+            if (match) {
+                const fileName = match[1];
+                const fileUrl = match[2];
+                
+                return {
+                    name: fileName,
+                    url: fileUrl,
+                    size: 0,
+                    type: getMimeTypeFromFileName(fileName)
+                };
+            }
+            return null;
+        }
+
+        function createFileLinkFromText(content) {
+            // "📎 dosya.pdf yüklendi: /media/chat_files/1/abc123.pdf" formatından dosya bilgilerini çıkar
+            const match = content.match(/📎 (.+?) yüklendi: (.+)/);
+            if (match) {
+                const fileName = match[1];
+                const fileUrl = match[2];
+                
+                return `
+                    <div class="file-message">
+                        <div class="file-icon">📎</div>
+                        <div class="file-details">
+                            <div class="file-name">${fileName}</div>
+                            <div class="file-size">Dosya</div>
+                        </div>
+                        <a href="${fileUrl}" class="download-btn" download="${fileName}" target="_blank">
+                            <i class="fas fa-download"></i> İndir
+                        </a>
+                    </div>
+                `;
+            }
+            return content;
+        }
+
+        function getMimeTypeFromFileName(fileName) {
+            const extension = fileName.split('.').pop().toLowerCase();
+            const mimeTypes = {
+                'pdf': 'application/pdf',
+                'doc': 'application/msword',
+                'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'xls': 'application/vnd.ms-excel',
+                'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'txt': 'text/plain',
+                'zip': 'application/zip',
+                'rar': 'application/x-rar-compressed',
+                'jpg': 'image/jpeg',
+                'jpeg': 'image/jpeg',
+                'png': 'image/png',
+                'gif': 'image/gif'
+            };
+            return mimeTypes[extension] || 'application/octet-stream';
+        }
+
+        function getFileIcon(mimeType) {
+            if (mimeType.startsWith('image/')) return '🖼️';
+            if (mimeType.includes('pdf')) return '📄';
+            if (mimeType.includes('word') || mimeType.includes('document')) return '📝';
+            if (mimeType.includes('excel') || mimeType.includes('spreadsheet')) return '📊';
+            if (mimeType.includes('text')) return '📄';
+            if (mimeType.includes('zip') || mimeType.includes('rar')) return '📦';
+            return '📎';
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+        // Utility functions
+        function autoResize(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = textarea.scrollHeight + 'px';
+        }
+
+        function scrollToBottom() {
+            if (chatMessages) {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        }
+
+    function toggleMessageActions(messageId) {
+        const dropdown = document.getElementById(`actions-dropdown-${messageId}`);
+        if (!dropdown) return;
+            
+        document.querySelectorAll('.message-actions-dropdown.show').forEach(el => {
+            if (el !== dropdown) el.classList.remove('show');
+        });
+            
+        dropdown.classList.toggle('show');
+            
+        function closeOnClick(e) {
+            if (!dropdown.contains(e.target)) {
+                dropdown.classList.remove('show');
+                document.removeEventListener('mousedown', closeOnClick);
+            }
+        }
+            
+        if (dropdown.classList.contains('show')) {
+            setTimeout(() => document.addEventListener('mousedown', closeOnClick), 0);
+        }
+    }
+
+    function deleteMessage(messageId) {
+        if (window.chatSocket) {
+                window.chatSocket.send(JSON.stringify({ 
+                    type: 'delete_message', 
+                    message_id: messageId 
+                }));
+        }
+        const msg = document.querySelector(`[data-message-id='${messageId}']`);
+        if (msg) msg.remove();
+    }
+
+    function startEditMessage(messageId, content) {
+        const msg = document.querySelector(`[data-message-id='${messageId}'] .message-bubble`);
+        if (!msg) return;
+        
+        // Mevcut içeriği sakla
+        msg.setAttribute('data-original-content', content);
+        
+        msg.innerHTML = `
+            <textarea class='edit-input' style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 10px; font-family: inherit; font-size: 14px; resize: vertical; min-height: 60px;">${content}</textarea>
+            <div class='edit-actions' style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button class='cancel-btn' onclick='cancelEditMessage("${messageId}")' style="background: #6c757d; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-size: 13px;">İptal</button>
+                <button class='edit-btn' onclick='saveEditMessage("${messageId}")' style="background: #28a745; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-size: 13px;">Kaydet</button>
+            </div>
+        `;
+        
+        // Textarea'ya odaklan
+        const textarea = msg.querySelector('.edit-input');
+        textarea.focus();
+        textarea.select();
+    }
+
+    function saveEditMessage(messageId) {
+        const msg = document.querySelector(`[data-message-id='${messageId}'] .edit-input`);
+        if (!msg) return;
+        
+        const newContent = msg.value.trim();
+        if (window.chatSocket && newContent) {
+            window.chatSocket.send(JSON.stringify({ 
+                type: 'edit_message', 
+                message_id: messageId, 
+                content: newContent 
+            }));
+            
+            // Düzenleme modunu kapat ve mesajı güncelle
+            const messageBubble = document.querySelector(`[data-message-id='${messageId}'] .message-bubble`);
+            if (messageBubble) {
+                messageBubble.innerHTML = `
+                    <div class="content">${newContent}</div>
+                    <div class="time">${new Date().toLocaleTimeString('tr-TR', {hour: '2-digit', minute: '2-digit'})}</div>
+                    <div class="edited-indicator" style="color: #666; font-size: 0.8em; font-style: italic;">(düzenlendi)</div>
+                `;
+            }
+        }
+    }
+
+    function cancelEditMessage(messageId) {
+        const msg = document.querySelector(`[data-message-id='${messageId}'] .message-bubble`);
+        if (!msg) return;
+        
+        const originalContent = msg.getAttribute('data-original-content');
+        if (originalContent) {
+            // Orijinal içeriği geri yükle
+            msg.innerHTML = `
+                <div class="content">${originalContent}</div>
+                <div class="time">${new Date().toLocaleTimeString('tr-TR', {hour: '2-digit', minute: '2-digit'})}</div>
+            `;
+        }
+    }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            messageInput.addEventListener('input', function() {
+                autoResize(this);
+                const content = this.value.trim();
+                sendButton.disabled = !content;
+                startTyping();
+                
+                if (typingTimer) {
+                    clearTimeout(typingTimer);
+                }
+                typingTimer = setTimeout(stopTyping, 1000);
+            });
+
+            sendButton.addEventListener('click', sendMessage);
+            
+            messageInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+
+            // File upload events
+    if (fileInput && fileUploadBtn) {
+        fileInput.addEventListener('change', handleFileSelect);
+        fileUploadBtn.addEventListener('dragover', e => {
+            e.preventDefault();
+            fileUploadBtn.classList.add('dragover');
+        });
+        fileUploadBtn.addEventListener('dragleave', e => {
+            e.preventDefault();
+            fileUploadBtn.classList.remove('dragover');
+        });
+        fileUploadBtn.addEventListener('drop', e => {
+            e.preventDefault();
+            fileUploadBtn.classList.remove('dragover');
+            fileInput.files = e.dataTransfer.files;
+            handleFileSelect();
+        });
+    }
+        });
+    </script>
+</body>
+{% endblock %}

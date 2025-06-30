@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kayıt Ol - ChatApp</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .register-container { 
+            background: white; 
+            padding: 40px; 
+            border-radius: 15px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1); 
+            width: 100%;
+            max-width: 400px;
+        }
+        .register-header { 
+            text-align: center; 
+            margin-bottom: 30px; 
+        }
+        .register-header h1 { 
+            color: #333; 
+            margin-bottom: 10px; 
+        }
+        .register-header p { 
+            color: #666; 
+        }
+        .form-group { 
+            margin-bottom: 20px; 
+        }
+        .form-group label { 
+            display: block; 
+            margin-bottom: 5px; 
+            color: #333; 
+            font-weight: 500; 
+        }
+        .form-group input { 
+            width: 100%; 
+            padding: 12px; 
+            border: 2px solid #e1e5e9; 
+            border-radius: 8px; 
+            font-size: 16px; 
+            transition: border-color 0.3s ease;
+        }
+        .form-group input:focus { 
+            outline: none; 
+            border-color: #667eea; 
+        }
+        .submit-btn { 
+            width: 100%; 
+            padding: 12px; 
+            background: #667eea; 
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            font-size: 16px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            transition: background 0.3s ease;
+        }
+        .submit-btn:hover { 
+            background: #5a6fd8; 
+        }
+        .login-link { 
+            text-align: center; 
+            margin-top: 20px; 
+            padding-top: 20px; 
+            border-top: 1px solid #e1e5e9; 
+        }
+        .login-link a { 
+            color: #667eea; 
+            text-decoration: none; 
+            font-weight: 500; 
+        }
+        .login-link a:hover { 
+            text-decoration: underline; 
+        }
+        .messages { 
+            margin-bottom: 20px; 
+        }
+        .message { 
+            padding: 10px; 
+            border-radius: 5px; 
+            margin-bottom: 10px; 
+        }
+        .message.error { 
+            background: #fee; 
+            color: #c33; 
+            border: 1px solid #fcc; 
+        }
+        .message.success { 
+            background: #efe; 
+            color: #3c3; 
+            border: 1px solid #cfc; 
+        }
+        .help-text { 
+            font-size: 0.9em; 
+            color: #666; 
+            margin-top: 5px; 
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <div class="register-header">
+            <h1>📝 Kayıt Ol</h1>
+            <p>ChatApp'e katılın</p>
+        </div>
+
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="message {{ message.tags }}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="{{ form.username.id_for_label }}">Kullanıcı Adı</label>
+                {{ form.username }}
+                {% if form.username.help_text %}
+                <div class="help-text">{{ form.username.help_text }}</div>
+                {% endif %}
+                {% if form.username.errors %}
+                <div class="message error">{{ form.username.errors.0 }}</div>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.email.id_for_label }}">Email</label>
+                {{ form.email }}
+                {% if form.email.help_text %}
+                <div class="help-text">{{ form.email.help_text }}</div>
+                {% endif %}
+                {% if form.email.errors %}
+                <div class="message error">{{ form.email.errors.0 }}</div>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.password1.id_for_label }}">Şifre</label>
+                {{ form.password1 }}
+                {% if form.password1.help_text %}
+                <div class="help-text">{{ form.password1.help_text }}</div>
+                {% endif %}
+                {% if form.password1.errors %}
+                <div class="message error">{{ form.password1.errors.0 }}</div>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.password2.id_for_label }}">Şifre Tekrar</label>
+                {{ form.password2 }}
+                {% if form.password2.help_text %}
+                <div class="help-text">{{ form.password2.help_text }}</div>
+                {% endif %}
+                {% if form.password2.errors %}
+                <div class="message error">{{ form.password2.errors.0 }}</div>
+                {% endif %}
+            </div>
+            
+            <!-- Form genel hataları -->
+            {% if form.non_field_errors %}
+            <div class="message error">
+                {% for error in form.non_field_errors %}
+                    {{ error }}
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <button type="submit" class="submit-btn">Kayıt Ol</button>
+        </form>
+
+        <div class="login-link">
+            <p>Zaten hesabınız var mı? <a href="{% url 'users:login' %}">Giriş Yap</a></p>
+        </div>
+    </div>
+</body>
+</html> 

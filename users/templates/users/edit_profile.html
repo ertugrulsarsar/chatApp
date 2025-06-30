@@ -1,0 +1,202 @@
+{% extends 'users/base.html' %}
+
+{% block title %}Profil Düzenle - ChatApp{% endblock %}
+
+{% block content %}
+<style>
+    .profile-picture-preview {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #667eea;
+        margin-bottom: 20px;
+    }
+    .form-group { margin-bottom: 20px; }
+    .form-group label { 
+        display: block; 
+        margin-bottom: 5px; 
+        color: #333; 
+        font-weight: 500; 
+    }
+    .form-control { 
+        width: 100%; 
+        padding: 12px; 
+        border: 2px solid #e1e5e9; 
+        border-radius: 8px; 
+        font-size: 16px; 
+        transition: border-color 0.3s ease;
+    }
+    .form-control:focus { 
+        outline: none; 
+        border-color: #667eea; 
+    }
+    .help-text {
+        font-size: 12px;
+        color: #666;
+        margin-top: 5px;
+    }
+    .errorlist {
+        color: #dc3545;
+        font-size: 14px;
+        margin-top: 5px;
+        list-style: none;
+        padding: 0;
+    }
+    .btn-primary {
+        background: #667eea;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 8px;
+        font-weight: 600;
+    }
+    .btn-primary:hover {
+        background: #5a6fd8;
+    }
+</style>
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="text-center">Profil Düzenle</h3>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <div class="text-center mb-4">
+                        <img id="profile-preview" src="{{ user.profile_picture_url }}" alt="Profil Resmi" class="profile-picture-preview">
+                    </div>
+
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <!-- Profil Resmi -->
+                        <div class="form-group">
+                            <label for="{{ form.profile_picture.id_for_label }}">Profil Resmi:</label>
+                            {{ form.profile_picture }}
+                            {% if form.profile_picture.help_text %}
+                                <div class="help-text">{{ form.profile_picture.help_text }}</div>
+                            {% endif %}
+                            {% if form.profile_picture.errors %}
+                                <ul class="errorlist">
+                                    {% for error in form.profile_picture.errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </div>
+
+                        <!-- Ad -->
+                        <div class="form-group">
+                            <label for="{{ form.first_name.id_for_label }}">Ad:</label>
+                            {{ form.first_name }}
+                            {% if form.first_name.errors %}
+                                <ul class="errorlist">
+                                    {% for error in form.first_name.errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </div>
+
+                        <!-- Soyad -->
+                        <div class="form-group">
+                            <label for="{{ form.last_name.id_for_label }}">Soyad:</label>
+                            {{ form.last_name }}
+                            {% if form.last_name.errors %}
+                                <ul class="errorlist">
+                                    {% for error in form.last_name.errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </div>
+
+                        <!-- Email -->
+                        <div class="form-group">
+                            <label for="{{ form.email.id_for_label }}">Email:</label>
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                                <ul class="errorlist">
+                                    {% for error in form.email.errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </div>
+
+                        <!-- Biyografi -->
+                        <div class="form-group">
+                            <label for="{{ form.bio.id_for_label }}">Biyografi:</label>
+                            {{ form.bio }}
+                            {% if form.bio.help_text %}
+                                <div class="help-text">{{ form.bio.help_text }}</div>
+                            {% endif %}
+                            {% if form.bio.errors %}
+                                <ul class="errorlist">
+                                    {% for error in form.bio.errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </div>
+
+                        <!-- Konum -->
+                        <div class="form-group">
+                            <label for="{{ form.location.id_for_label }}">Konum:</label>
+                            {{ form.location }}
+                            {% if form.location.errors %}
+                                <ul class="errorlist">
+                                    {% for error in form.location.errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </div>
+
+                        <!-- Doğum Tarihi -->
+                        <div class="form-group">
+                            <label for="{{ form.birth_date.id_for_label }}">Doğum Tarihi:</label>
+                            {{ form.birth_date }}
+                            {% if form.birth_date.errors %}
+                                <ul class="errorlist">
+                                    {% for error in form.birth_date.errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </div>
+
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary">Profili Güncelle</button>
+                            <a href="{% url 'users:profile' %}" class="btn btn-secondary ms-2">İptal</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Profil resmi önizleme
+document.getElementById('profile-picture-input').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('profile-preview').src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+});
+</script>
+{% endblock %} 

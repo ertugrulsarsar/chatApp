@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profil - ChatApp</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            margin: 0;
+            overflow-x: hidden;
+        }
+        .container { 
+            max-width: 600px; 
+            margin: 0 auto; 
+            background: white; 
+            border-radius: 15px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1); 
+            overflow: hidden;
+            position: relative;
+        }
+        .profile-header { 
+            background: #667eea; 
+            color: white; 
+            padding: 30px; 
+            text-align: center; 
+            position: relative;
+        }
+        .profile-header h1 { 
+            margin-bottom: 10px; 
+        }
+        .profile-avatar { 
+            width: 120px; 
+            height: 120px; 
+            border-radius: 50%; 
+            margin: 0 auto 20px; 
+            object-fit: cover;
+            border: 4px solid rgba(255,255,255,0.3);
+            display: block;
+        }
+        .profile-info { 
+            padding: 30px; 
+        }
+        .info-group { 
+            margin-bottom: 20px; 
+            padding: 15px; 
+            background: #f8f9fa; 
+            border-radius: 8px; 
+        }
+        .info-label { 
+            font-weight: 600; 
+            color: #333; 
+            margin-bottom: 5px; 
+        }
+        .info-value { 
+            color: #666; 
+        }
+        .online-status {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .online-status.online {
+            background: #28a745;
+        }
+        .online-status.offline {
+            background: #dc3545;
+        }
+        .profile-actions { 
+            padding: 20px 30px; 
+            border-top: 1px solid #e1e5e9; 
+            display: flex; 
+            gap: 10px; 
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .btn { 
+            padding: 10px 20px; 
+            border: none; 
+            border-radius: 5px; 
+            text-decoration: none; 
+            font-weight: 500; 
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+        .btn-primary { 
+            background: #667eea; 
+            color: white; 
+        }
+        .btn-primary:hover { 
+            background: #5a6fd8; 
+        }
+        .btn-secondary { 
+            background: #6c757d; 
+            color: white; 
+        }
+        .btn-secondary:hover { 
+            background: #5a6268; 
+        }
+        .btn-danger { 
+            background: #dc3545; 
+            color: white; 
+        }
+        .btn-danger:hover { 
+            background: #c82333; 
+        }
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #218838;
+        }
+        
+        /* Responsive düzenlemeler */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            .container {
+                max-width: 100%;
+            }
+            .profile-avatar {
+                width: 100px;
+                height: 100px;
+            }
+            .profile-actions {
+                flex-direction: column;
+            }
+            .btn {
+                width: 100%;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="profile-header">
+            {% if user.profile_picture %}
+                <img src="{{ user.profile_picture.url }}" alt="Profil Resmi" class="profile-avatar">
+            {% else %}
+                <div class="profile-avatar" style="background: #667eea; display: flex; align-items: center; justify-content: center; font-size: 48px; color: white;">
+                {{ user.username|first|upper }}
+            </div>
+            {% endif %}
+            <h1>{{ user.display_name }}</h1>
+            <p>
+                <span class="online-status {% if user.is_online %}online{% else %}offline{% endif %}"></span>
+                {% if user.is_online %}
+                    Çevrimiçi
+                {% else %}
+                    Çevrimdışı
+                    {% if user.last_seen %}
+                        - Son görülme: {{ user.last_seen|date:"d.m.Y H:i" }}
+                    {% endif %}
+                {% endif %}
+            </p>
+        </div>
+        
+        <div class="profile-info">
+            <div class="info-group">
+                <div class="info-label">Kullanıcı Adı</div>
+                <div class="info-value">{{ user.username }}</div>
+            </div>
+            
+            {% if user.first_name or user.last_name %}
+            <div class="info-group">
+                <div class="info-label">Ad Soyad</div>
+                <div class="info-value">{{ user.first_name }} {{ user.last_name }}</div>
+            </div>
+            {% endif %}
+            
+            <div class="info-group">
+                <div class="info-label">E-posta</div>
+                <div class="info-value">{{ user.email|default:"Belirtilmemiş" }}</div>
+            </div>
+            
+            {% if user.bio %}
+            <div class="info-group">
+                <div class="info-label">Biyografi</div>
+                <div class="info-value">{{ user.bio }}</div>
+            </div>
+            {% endif %}
+            
+            {% if user.location %}
+            <div class="info-group">
+                <div class="info-label">Konum</div>
+                <div class="info-value">{{ user.location }}</div>
+            </div>
+            {% endif %}
+            
+            {% if user.birth_date %}
+            <div class="info-group">
+                <div class="info-label">Doğum Tarihi</div>
+                <div class="info-value">{{ user.birth_date|date:"d.m.Y" }}</div>
+            </div>
+            {% endif %}
+            
+            <div class="info-group">
+                <div class="info-label">Hesap Oluşturulma</div>
+                <div class="info-value">{{ user.date_joined|date:"d.m.Y H:i" }}</div>
+            </div>
+            
+            <div class="info-group">
+                <div class="info-label">Son Giriş</div>
+                <div class="info-value">{{ user.last_login|date:"d.m.Y H:i"|default:"Hiç giriş yapılmamış" }}</div>
+            </div>
+            
+            <div class="info-group">
+                <div class="info-label">2FA Durumu</div>
+                <div class="info-value">
+                    {% if user.is_2fa_enabled %}
+                        ✅ Aktif
+                    {% else %}
+                        ❌ Pasif
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="profile-actions">
+            <a href="/" class="btn btn-primary">🏠 Ana Sayfa</a>
+            <a href="/chat/" class="btn btn-primary">💬 Chat Odaları</a>
+            <a href="{% url 'users:edit_profile' %}" class="btn btn-success">✏️ Profili Düzenle</a>
+            <a href="{% url 'users:change_password' %}" class="btn btn-secondary">🔒 Şifre Değiştir</a>
+            <a href="{% url 'users:logout' %}" class="btn btn-danger">🚪 Çıkış Yap</a>
+        </div>
+    </div>
+</body>
+</html> 
