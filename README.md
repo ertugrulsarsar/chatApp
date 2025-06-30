@@ -302,8 +302,8 @@ CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 ## 📞 İletişim
 
 - Email: ertugrulsarsar@gmail.com
-- GitHub: [@yourusername](https://github.com/ertugrulsarsar)
-- LinkedIn: [Your Name](https://linkedin.com/in/ertugrulsarsar)
+- GitHub: [@ertugrulsarsar](https://github.com/ertugrulsarsar)
+- LinkedIn: [Ertuğrul Sarsar](https://linkedin.com/in/ertugrulsarsar)
 
 ---
 
